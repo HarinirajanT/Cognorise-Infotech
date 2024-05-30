@@ -1,1 +1,145 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container">
+        <div id="currencyConverter">
+            <h2>Currency Converter</h2>
+            <div>
+                <input type="number" id="amountInput" />
+                <select id="fromCurrencySelect"></select>
+            </div>
+            <div>
+                <input type="number" id="convertedAmountInput" />
+                <select id="toCurrencySelect"></select>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+#container {
+    border: 2px solid #3498db;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#currencyConverter {
+    font-family: Arial, sans-serif;
+    width: 300px;
+}
+
+#currencyConverter h2 {
+    margin-bottom: 10px;
+}
+
+input[type="number"],
+select {
+    width: calc(50% - 5px);
+    padding: 8px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+input[type="number"]:focus,
+select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px #3498db;
+}
+
+input[type="number"] {
+    width: calc(50% - 12px);
+}
+
+select {
+    width: calc(50% + 2px);
+}
+
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const amountInput = document.getElementById("amountInput");
+    const convertedAmountInput = document.getElementById("convertedAmountInput");
+    const fromCurrencySelect = document.getElementById("fromCurrencySelect");
+    const toCurrencySelect = document.getElementById("toCurrencySelect");
+
+    let currencyOptions = [];
+
+    // Fetch currency options
+    async function fetchCurrencyOptions() {
+        try {
+            const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            if (!response.ok) {
+                throw new Error('Failed to fetch currency options');
+            }
+            const data = await response.json();
+            const currencyList = Object.keys(data.rates);
+            currencyOptions = [data.base, ...currencyList];
+            populateCurrencySelects();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // Populate currency selects
+    function populateCurrencySelects() {
+        currencyOptions.forEach(currency => {
+            const option = document.createElement("option");
+            option.value = currency;
+            option.textContent = currency;
+            fromCurrencySelect.appendChild(option.cloneNode(true));
+            toCurrencySelect.appendChild(option);
+        });
+    }
+
+    // Fetch and update exchange rate
+    async function fetchAndUpdateExchangeRate() {
+        const fromCurrency = fromCurrencySelect.value;
+        const toCurrency = toCurrencySelect.value;
+        try {
+            const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${fromCurrency}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch exchange rate');
+            }
+            const data = await response.json();
+            const exchangeRate = data.rates[toCurrency];
+            const amount = parseFloat(amountInput.value);
+            const convertedAmount = (amount * exchangeRate).toFixed(2);
+            convertedAmountInput.value = convertedAmount;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // Event listeners
+    amountInput.addEventListener("input", fetchAndUpdateExchangeRate);
+    fromCurrencySelect.addEventListener("change", fetchAndUpdateExchangeRate);
+    toCurrencySelect.addEventListener("change", fetchAndUpdateExchangeRate);
+
+    // Initialize
+    fetchCurrencyOptions();
+});
+
